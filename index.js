@@ -1,10 +1,14 @@
 
+var view = document.querySelector('.view');
 var max = view.scrollHeight - window.innerHeight;
 var min = 0;
 var offset = 0;
-var pressed = false;
+var startDragging = false;
 
-var view = document.querySelector('.view');
+var timeConstant = 325; // ms
+var velocity, amplitude, lastOffset, lastTimestamp, trackTicker, target;
+
+
 if (typeof window.ontouchstart !== 'undefined') {
  view.addEventListener('touchstart', tap);
  view.addEventListener('touchmove', drag);
@@ -16,16 +20,25 @@ view.addEventListener('mouseup', release);
 
 
 function tap(event) {
-  pressed = true;
-  reference = getYpos(event);
   event.preventDefault();
+  startDragging = true;
+  reference = getYpos(event);
+
+  velocity = 0;
+  amplitude = 0;
+  lastOffset = offset;
+  lastTimestamp = Date.now();
+  trackTicker = setInterval(function() {
+    track();
+  }, 30);
 }
 
 function drag(event) {
+  event.preventDefault();
   var y;
   var deltaY;
 
-  if (pressed) {
+  if (startDragging) {
     y = getYpos(event);
     deltaY = reference - y;
 
@@ -34,13 +47,23 @@ function drag(event) {
       scroll(offset + deltaY);
     }
   }
-
-  event.preventDefault();
 }
 
 function release(event) {
-  pressed = false;
   event.preventDefault();
+  startDragging = false;
+
+  clearInterval(trackTicker);
+  document.querySelector('.velocity').innerHTML = velocity;
+  if ( Math.abs(velocity) > 1 ) {
+    amplitude = 0.8 * velocity;
+
+    // target = Math.round(offset + (velocity > 0? 1000 : -1000));
+    target = Math.round(offset + amplitude);
+    lastTimestamp = Date.now();
+    autoScroll();
+  }
+
 }
 
 
@@ -66,3 +89,32 @@ function scroll(y) {
   view.style.transform = 'translateY(' + (-offset) + 'px)';
 }
 
+function track() {
+  var now = Date.now();
+  var elapsed = now - lastTimestamp;
+  lastTimestamp = now;
+
+  var deltaY = offset - lastOffset;
+  lastOffset = offset;
+
+  velocity = 1000 * deltaY / (elapsed + 1);
+}
+
+function autoScroll() {
+  if (!amplitude) {
+    return;
+  }
+
+  var elapsed = Date.now() - lastTimestamp;
+  var delta = amplitude * Math.exp(-elapsed / timeConstant);
+  delta = Math.round(delta);
+
+  if (delta === 0) {
+    return;
+  }
+
+  scroll(target - delta);
+  requestAnimationFrame(function() {
+    autoScroll();
+  });
+}
