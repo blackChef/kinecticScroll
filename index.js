@@ -3,7 +3,6 @@ var view = document.querySelector('.view');
 var currentOffset = 0;
 var snap = 30;
 
-var timeConstant = 325; // ms 跟惯性运动的时间成正比
 var lastTouchPos, isPressed, velocity, trackVelocityTicker;
 
 
@@ -41,10 +40,12 @@ function release(event) {
   isPressed = false;
 
   if ( Math.abs(velocity) > 10 ) {
+    var timeConstant = 325; // ms 跟惯性运动的时间成正比
     var amplitude = 0.5 * velocity; // 值越大，惯性滚动的的距离就越短
     var inertialDistance = Math.round(currentOffset + amplitude);
+
     inertialDistance = Math.round( inertialDistance / snap ) * snap; // snap
-    inertialMove(inertialDistance, amplitude);
+    inertialMove(inertialDistance, amplitude, timeConstant);
   }
 }
 
@@ -65,7 +66,6 @@ function moveView(distance) {
 function trackVelocity() {
   var lastTime = Date.now();
   var lastOffset = currentOffset;
-  var velocities = [];
 
   function loop() {
     var currentTime = Date.now();
@@ -90,7 +90,7 @@ function trackVelocity() {
 }
 
 
-function inertialMove(inertialDistance, amplitude) {
+function inertialMove(inertialDistance, amplitude, timeConstant) {
   var startTime = Date.now();
 
   function loop() {
