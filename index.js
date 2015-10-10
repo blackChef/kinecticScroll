@@ -109,7 +109,7 @@ function autoScroll() {
   var delta = amplitude * Math.exp(-elapsed / timeConstant);
   delta = Math.round(delta);
 
-  if (delta < 5) {
+  if (Math.abs(delta) < 5) {
     scroll(target);
     return;
   }
