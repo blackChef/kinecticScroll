@@ -1,19 +1,16 @@
 
 var view = document.querySelector('.view');
-var max = view.scrollHeight - window.innerHeight;
-var min = 0;
-var offset = 0;
-var startDragging = false;
+var currentOffset = 0;
 var snap = 30;
 
-var timeConstant = 325; // ms
-var velocity, amplitude, lastOffset, lastTimestamp, trackTicker, target;
+var timeConstant = 325; // ms 跟惯性运动的时间成正比
+var velocity, trackVelocityTicker, isPressed;
 
 
 if (typeof window.ontouchstart !== 'undefined') {
- view.addEventListener('touchstart', tap);
- view.addEventListener('touchmove', drag);
- view.addEventListener('touchend', release);
+  view.addEventListener('touchstart', tap);
+  view.addEventListener('touchmove', drag);
+  view.addEventListener('touchend', release);
 }
 view.addEventListener('mousedown', tap);
 view.addEventListener('mousemove', drag);
@@ -22,16 +19,9 @@ view.addEventListener('mouseup', release);
 
 function tap(event) {
   event.preventDefault();
-  startDragging = true;
-  reference = getYpos(event);
-
-  velocity = 0;
-  amplitude = 0;
-  lastOffset = offset;
-  lastTimestamp = Date.now();
-  trackTicker = setInterval(function() {
-    track();
-  }, 30);
+  isPressed = true;
+  reference = getEventYpos(event);
+  trackVelocity();
 }
 
 function drag(event) {
@@ -39,34 +29,93 @@ function drag(event) {
   var y;
   var deltaY;
 
-  if (startDragging) {
-    y = getYpos(event);
-    deltaY = reference - y;
+  y = getEventYpos(event);
+  deltaY = reference - y;
 
-    if ( Math.abs(deltaY) > 2 ) {
-      reference = y;
-      scroll(offset + deltaY);
-    }
+  if ( Math.abs(deltaY) > 2 ) {
+    reference = y;
+    moveView (currentOffset + deltaY);
   }
 }
 
 function release(event) {
   event.preventDefault();
-  startDragging = false;
+  isPressed = false;
 
-  clearInterval(trackTicker);
-  document.querySelector('.velocity').innerHTML = velocity;
-  if ( Math.abs(velocity) > 1 ) {
-    amplitude = 0.8 * velocity;
-    target = Math.round(offset + amplitude);
-    target = Math.round( target / snap ) * snap; // snap
-    lastTimestamp = Date.now();
-    autoScroll();
+  if ( Math.abs(velocity) > 10 ) {
+    var amplitude = 0.5 * velocity;
+    var inertialDistance = Math.round(currentOffset + amplitude);
+    inertialDistance = Math.round( inertialDistance / snap ) * snap; // snap
+    inertialMove(inertialDistance, amplitude);
   }
 }
 
 
-function getYpos(event) {
+function moveView(y) {
+  var max = view.scrollHeight - window.innerHeight;
+  var min = 0;
+  if (y > max) {
+    distance = max;
+  } else if (y < min) {
+    distance = min;
+  } else {
+    distance = y;
+  }
+
+  view.style.transform = 'translateY(' + (-distance) + 'px)';
+  currentOffset = distance;
+}
+
+function trackVelocity() {
+  var lastTime = Date.now();
+  var lastOffset = currentOffset;
+  var velocities = [];
+
+  function loop() {
+    var currentTime = Date.now();
+    var elapsed = currentTime - lastTime || 1;
+    lastTime = currentTime;
+
+    var deltaY = currentOffset - lastOffset;
+    lastOffset = currentOffset;
+
+    velocity = 1000 * deltaY / elapsed;
+    // velocity = 100;
+
+    if (!isPressed) {
+      return;
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+
+  trackVelocityTicker = requestAnimationFrame(loop);
+}
+
+
+function inertialMove(inertialDistance, amplitude) {
+  var startTime = Date.now();
+
+  function loop() {
+    var currentTime = Date.now();
+    var elapsed = currentTime - startTime;
+    var delta =  Math.round( amplitude * Math.exp(-elapsed / timeConstant) );
+
+    moveView(inertialDistance - delta);
+
+    if (Math.abs(delta) === 0 || isPressed) {
+      return;
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+}
+
+
+function getEventYpos(event) {
   // touch event
   if (event.targetTouches && (event.targetTouches.length >= 1)) {
     return event.targetTouches[0].clientY;
@@ -74,47 +123,4 @@ function getYpos(event) {
 
   // mouse event
   return event.clientY;
-}
-
-function scroll(y) {
-  if (y > max) {
-    offset = max;
-  } else if (y < min) {
-    offset = min;
-  } else {
-    offset = y;
-  }
-
-  view.style.transform = 'translateY(' + (-offset) + 'px)';
-}
-
-function track() {
-  var now = Date.now();
-  var elapsed = now - lastTimestamp;
-  lastTimestamp = now;
-
-  var deltaY = offset - lastOffset;
-  lastOffset = offset;
-
-  velocity = 1000 * deltaY / (elapsed + 1);
-}
-
-function autoScroll() {
-  if (!amplitude) {
-    return;
-  }
-
-  var elapsed = Date.now() - lastTimestamp;
-  var delta = amplitude * Math.exp(-elapsed / timeConstant);
-  delta = Math.round(delta);
-
-  if (Math.abs(delta) < 5) {
-    scroll(target);
-    return;
-  }
-
-  scroll(target - delta);
-  requestAnimationFrame(function() {
-    autoScroll();
-  });
 }
