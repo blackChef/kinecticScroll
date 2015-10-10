@@ -6,15 +6,16 @@ var snap = 30;
 var lastTouchPos, isPressed, velocity, trackVelocityTicker;
 
 
+// set up events
 if (typeof window.ontouchstart !== 'undefined') {
   view.addEventListener('touchstart', tap);
   view.addEventListener('touchmove', drag);
   view.addEventListener('touchend', release);
+} else {
+  view.addEventListener('mousedown', tap);
+  view.addEventListener('mousemove', drag);
+  view.addEventListener('mouseup', release);
 }
-view.addEventListener('mousedown', tap);
-view.addEventListener('mousemove', drag);
-view.addEventListener('mouseup', release);
-
 
 function tap(event) {
   event.preventDefault();
@@ -42,7 +43,7 @@ function release(event) {
   if ( Math.abs(velocity) > 10 ) {
     var timeConstant = 325; // ms 跟惯性运动的时间成正比
     var amplitude = 0.5 * velocity; // 值越大，惯性滚动的的距离就越短
-    var inertialDistance = Math.round(currentOffset + amplitude);
+    var inertialDistance = Math.round(currentOffset + amplitude); // 必须大于 amplitude
 
     inertialDistance = Math.round( inertialDistance / snap ) * snap; // snap
     inertialMove(inertialDistance, amplitude, timeConstant);
