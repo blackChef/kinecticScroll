@@ -4,6 +4,7 @@ var max = view.scrollHeight - window.innerHeight;
 var min = 0;
 var offset = 0;
 var startDragging = false;
+var snap = 30;
 
 var timeConstant = 325; // ms
 var velocity, amplitude, lastOffset, lastTimestamp, trackTicker, target;
@@ -57,13 +58,12 @@ function release(event) {
   document.querySelector('.velocity').innerHTML = velocity;
   if ( Math.abs(velocity) > 1 ) {
     amplitude = 0.8 * velocity;
-
-    // target = Math.round(offset + (velocity > 0? 1000 : -1000));
     target = Math.round(offset + amplitude);
+    // snap
+    target = Math.round( target / snap ) * snap;
     lastTimestamp = Date.now();
     autoScroll();
   }
-
 }
 
 
@@ -109,7 +109,8 @@ function autoScroll() {
   var delta = amplitude * Math.exp(-elapsed / timeConstant);
   delta = Math.round(delta);
 
-  if (delta === 0) {
+  if (delta < 5) {
+    scroll(target);
     return;
   }
 
