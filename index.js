@@ -59,8 +59,7 @@ function release(event) {
   if ( Math.abs(velocity) > 1 ) {
     amplitude = 0.8 * velocity;
     target = Math.round(offset + amplitude);
-    // snap
-    target = Math.round( target / snap ) * snap;
+    target = Math.round( target / snap ) * snap; // snap
     lastTimestamp = Date.now();
     autoScroll();
   }
