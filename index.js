@@ -20,19 +20,19 @@ if (typeof window.ontouchstart !== 'undefined') {
 function tap(event) {
   event.preventDefault();
   isPressed = true;
-  lastTouchPos = getEventYpos(event);
+  lastTouchPos = getEventPos(event);
   trackVelocity();
 }
 
 function drag(event) {
   event.preventDefault();
 
-  var currentPos = getEventYpos(event);
-  var deltaY = lastTouchPos - currentPos;
+  var currentPos = getEventPos(event);
+  var delta = lastTouchPos - currentPos;
 
-  if ( Math.abs(deltaY) > 2 ) {
+  if ( Math.abs(delta) > 2 ) {
     lastTouchPos = currentPos;
-    moveView (currentOffset + deltaY);
+    moveView (currentOffset + delta);
   }
 }
 
@@ -73,10 +73,10 @@ function trackVelocity() {
     var elapsed = currentTime - lastTime || 1;
     lastTime = currentTime;
 
-    var deltaY = currentOffset - lastOffset;
+    var delta = currentOffset - lastOffset;
     lastOffset = currentOffset;
 
-    velocity = 1000 * deltaY / elapsed;
+    velocity = 1000 * delta / elapsed;
     // velocity = 100;
 
     if (!isPressed) {
@@ -113,12 +113,14 @@ function inertialMove(inertialDistance, amplitude, timeConstant) {
 }
 
 
-function getEventYpos(event) {
+function getEventPos(event, dir) {
+  dir = dir || 'y';
+
   // touch event
   if (event.targetTouches && (event.targetTouches.length >= 1)) {
-    return event.targetTouches[0].clientY;
+    return event.targetTouches[0]['client' + dir.toUpperCase()];
   }
 
   // mouse event
-  return event.clientY;
+  return event['client' + dir.toUpperCase()];
 }
