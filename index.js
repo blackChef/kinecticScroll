@@ -4,7 +4,7 @@ var currentOffset = 0;
 var snap = 30;
 
 var timeConstant = 325; // ms 跟惯性运动的时间成正比
-var velocity, trackVelocityTicker, isPressed;
+var lastTouchPos, isPressed, velocity, trackVelocityTicker;
 
 
 if (typeof window.ontouchstart !== 'undefined') {
@@ -20,20 +20,18 @@ view.addEventListener('mouseup', release);
 function tap(event) {
   event.preventDefault();
   isPressed = true;
-  reference = getEventYpos(event);
+  lastTouchPos = getEventYpos(event);
   trackVelocity();
 }
 
 function drag(event) {
   event.preventDefault();
-  var y;
-  var deltaY;
 
-  y = getEventYpos(event);
-  deltaY = reference - y;
+  var currentPos = getEventYpos(event);
+  var deltaY = lastTouchPos - currentPos;
 
   if ( Math.abs(deltaY) > 2 ) {
-    reference = y;
+    lastTouchPos = currentPos;
     moveView (currentOffset + deltaY);
   }
 }
@@ -43,7 +41,7 @@ function release(event) {
   isPressed = false;
 
   if ( Math.abs(velocity) > 10 ) {
-    var amplitude = 0.5 * velocity;
+    var amplitude = 0.5 * velocity; // 值越大，惯性滚动的的距离就越短
     var inertialDistance = Math.round(currentOffset + amplitude);
     inertialDistance = Math.round( inertialDistance / snap ) * snap; // snap
     inertialMove(inertialDistance, amplitude);
@@ -51,15 +49,13 @@ function release(event) {
 }
 
 
-function moveView(y) {
+function moveView(distance) {
   var max = view.scrollHeight - window.innerHeight;
   var min = 0;
-  if (y > max) {
+  if (distance > max) {
     distance = max;
-  } else if (y < min) {
+  } else if (distance < min) {
     distance = min;
-  } else {
-    distance = y;
   }
 
   view.style.transform = 'translateY(' + (-distance) + 'px)';
@@ -101,8 +97,9 @@ function inertialMove(inertialDistance, amplitude) {
     var currentTime = Date.now();
     var elapsed = currentTime - startTime;
     var delta =  Math.round( amplitude * Math.exp(-elapsed / timeConstant) );
+    var distance = inertialDistance - delta;
 
-    moveView(inertialDistance - delta);
+    moveView(distance);
 
     if (Math.abs(delta) === 0 || isPressed) {
       return;
