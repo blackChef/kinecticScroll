@@ -74,7 +74,7 @@ function trackVelocity() {
 
   function loop() {
     var currentTime = Date.now();
-    var elapsed = currentTime - lastTime || 1;
+    var elapsed = currentTime - lastTime;
     lastTime = currentTime;
 
     var delta = currentOffset - lastOffset;
