@@ -92,17 +92,19 @@ function trackVelocity() {
 }
 
 
-function exponentialDecay (deltaTime, timeConstant) {
+function exponentialDecay (deltaTime) {
+  // 因为 deltaTime 总是等于 1000 / 16
+  // 所以每一次惯性运动的持续时间是固定的
+  var timeConstant = 125; // ms 跟惯性运动的时间成正比
   return 1 - Math.exp(-deltaTime / timeConstant);
 }
 
 function inertialMove(inertialMoveDistance) {
-  var timeConstant = 125; // ms 跟惯性运动的时间成正比
   var startTime = Date.now();
   var offsetWhenRelease = currentOffset;
 
   function loop() {
-    var progress = exponentialDecay(Date.now() - startTime, timeConstant);
+    var progress = exponentialDecay(Date.now() - startTime);
 
     if ( (1 - progress).toFixed(3) == 0.001) {
       progress = 1;
