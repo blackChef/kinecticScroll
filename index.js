@@ -25,7 +25,6 @@ function tap(event) {
 
 function drag(event) {
   event.preventDefault();
-
   var currentEventPos = getEventPos(event);
   var delta = lastEventPos - currentEventPos;
 
@@ -88,7 +87,6 @@ function trackVelocity() {
 
     requestAnimationFrame(loop);
   }
-
 
   requestAnimationFrame(loop);
 }
