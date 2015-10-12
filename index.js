@@ -1,9 +1,8 @@
 
 var view = document.querySelector('.view');
-var currentOffset = 0;
-var snap = 30;
 
-var lastTouchPos, isPressed, velocity, trackVelocityTicker;
+var currentOffset = 0;
+var lastEventPos, isPressed, velocity;
 
 
 // set up events
@@ -20,18 +19,18 @@ if (typeof window.ontouchstart !== 'undefined') {
 function tap(event) {
   event.preventDefault();
   isPressed = true;
-  lastTouchPos = getEventPos(event);
+  lastEventPos = getEventPos(event);
   trackVelocity();
 }
 
 function drag(event) {
   event.preventDefault();
 
-  var currentPos = getEventPos(event);
-  var delta = lastTouchPos - currentPos;
+  var currentEventPos = getEventPos(event);
+  var delta = lastEventPos - currentEventPos;
 
   if ( Math.abs(delta) > 2 ) {
-    lastTouchPos = currentPos;
+    lastEventPos = currentEventPos;
     moveView (currentOffset + delta);
   }
 }
@@ -41,12 +40,14 @@ function release(event) {
   isPressed = false;
 
   if ( Math.abs(velocity) > 10 ) {
-    var timeConstant = 325; // ms 跟惯性运动的时间成正比
-    var amplitude = 0.5 * velocity; // 值越大，惯性滚动的的距离就越短
-    var inertialDistance = Math.round(currentOffset + amplitude); // 必须大于 amplitude
+    var snap = 30;
 
-    inertialDistance = Math.round( inertialDistance / snap ) * snap; // snap
-    inertialMove(inertialDistance, amplitude, timeConstant);
+    var targetOffset = currentOffset + 0.5 * velocity;
+    targetOffset = Math.round( targetOffset / snap ) * snap; // snap
+
+    var inertialMoveDistance = targetOffset - currentOffset;
+
+    inertialMove(inertialMoveDistance);
   }
 }
 
@@ -54,6 +55,9 @@ function release(event) {
 function moveView(distance) {
   var max = view.scrollHeight - window.innerHeight;
   var min = 0;
+
+  distance = Math.round(distance);
+
   if (distance > max) {
     distance = max;
   } else if (distance < min) {
@@ -77,7 +81,6 @@ function trackVelocity() {
     lastOffset = currentOffset;
 
     velocity = 1000 * delta / elapsed;
-    // velocity = 100;
 
     if (!isPressed) {
       return;
@@ -87,29 +90,38 @@ function trackVelocity() {
   }
 
 
-  trackVelocityTicker = requestAnimationFrame(loop);
+  requestAnimationFrame(loop);
 }
 
 
-function inertialMove(inertialDistance, amplitude, timeConstant) {
+function exponentialDecay (deltaTime, timeConstant) {
+  return 1 - Math.exp(-deltaTime / timeConstant);
+}
+
+function inertialMove(inertialMoveDistance) {
+  var timeConstant = 125; // ms 跟惯性运动的时间成正比
   var startTime = Date.now();
+  var offsetWhenRelease = currentOffset;
 
   function loop() {
-    var currentTime = Date.now();
-    var elapsed = currentTime - startTime;
-    var delta =  Math.round( amplitude * Math.exp(-elapsed / timeConstant) );
-    var distance = inertialDistance - delta;
+    var progress = exponentialDecay(Date.now() - startTime, timeConstant);
+
+    if ( (1 - progress).toFixed(3) == 0.001) {
+      progress = 1;
+    }
+
+    var distance = offsetWhenRelease + inertialMoveDistance * progress;
 
     moveView(distance);
 
-    if (Math.abs(delta) === 0 || isPressed) {
+    if (progress == 1 || isPressed) {
       return;
     }
 
     requestAnimationFrame(loop);
   }
 
-  loop();
+  requestAnimationFrame(loop);
 }
 
 
