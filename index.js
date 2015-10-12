@@ -30,7 +30,9 @@ function drag(event) {
 
   if ( Math.abs(delta) > 2 ) {
     lastEventPos = currentEventPos;
-    moveView (currentOffset + delta);
+    requestAnimationFrame(function() {
+      moveView (currentOffset + delta);
+    });
   }
 }
 
