@@ -19,13 +19,13 @@ if (typeof window.ontouchstart !== 'undefined') {
 function tap(event) {
   event.preventDefault();
   isPressed = true;
-  lastEventPos = getEventPos(event);
+  lastEventPos = getEventPos(event, 'x');
   trackVelocity();
 }
 
 function drag(event) {
   event.preventDefault();
-  var currentEventPos = getEventPos(event);
+  var currentEventPos = getEventPos(event, 'x');
   var delta = lastEventPos - currentEventPos;
 
   if ( Math.abs(delta) > 2 ) {
@@ -38,21 +38,19 @@ function release(event) {
   event.preventDefault();
   isPressed = false;
 
-  if ( Math.abs(velocity) > 10 ) {
-    var snap = 30;
+  var snap = window.innerWidth / 2;
 
-    var targetOffset = currentOffset + 0.5 * velocity;
-    targetOffset = Math.round( targetOffset / snap ) * snap; // snap
+  var targetOffset = currentOffset + 0.15 * velocity;
+  targetOffset = Math.round( targetOffset / snap ) * snap; // snap
 
-    var inertialMoveDistance = targetOffset - currentOffset;
+  var inertialMoveDistance = targetOffset - currentOffset;
 
-    inertialMove(inertialMoveDistance);
-  }
+  inertialMove(inertialMoveDistance);
 }
 
 
 function moveView(distance) {
-  var max = view.scrollHeight - window.innerHeight;
+  var max = view.scrollWidth - window.innerWidth;
   var min = 0;
 
   distance = Math.round(distance);
@@ -63,7 +61,7 @@ function moveView(distance) {
     distance = min;
   }
 
-  view.style.transform = 'translateY(' + (-distance) + 'px)';
+  view.style.transform = 'translateX(' + (-distance) + 'px)';
   currentOffset = distance;
 }
 
